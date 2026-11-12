@@ -1,15 +1,42 @@
 "use client";
 
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ApiError, getSharedDeck, saveSharedDeck, type CardInput } from "@/lib/api";
 import { guardarAviso } from "@/lib/aviso";
 import { colarFichas } from "@/lib/colarFichas.mjs";
+import { mensagemDeErro, plural } from "@/lib/texto";
+import { ErroCarregar } from "../../ErroCarregar";
 import { useConfirmar } from "../../Confirmar";
+import { useSession } from "../../Painel";
 
 const EMPTY: CardInput = { question: "", answer: "" };
-const plural = (n: number, um: string, varios: string) => `${n} ${n === 1 ? um : varios}`;
+
+function Voltar({ onClick }: { onClick?: (e: React.MouseEvent) => void }) {
+  return (
+    <Link href="/baralhos/" className="voltar" onClick={onClick}>
+      <span aria-hidden="true">←</span> Baralhos compartilhados
+    </Link>
+  );
+}
+
+// Mesmo esqueleto no Suspense e enquanto o baralho carrega
+function EditarLoading({ onVoltar }: { onVoltar?: (e: React.MouseEvent) => void }) {
+  return (
+    <main id="conteudo">
+      <Voltar onClick={onVoltar} />
+      <p role="status" className="sr-only">
+        Carregando baralho...
+      </p>
+      <div aria-hidden="true" className="cartao">
+        <span className="esqueleto" style={{ width: "50%", height: "2rem" }} />
+        <span className="esqueleto" style={{ width: "100%", height: "3rem" }} />
+        <span className="esqueleto" style={{ width: "100%", height: "5rem" }} />
+      </div>
+    </main>
+  );
+}
 
 /** Erro mostrado junto do campo, que também recebe o foco. */
 interface Problema {
@@ -38,6 +65,9 @@ function EditarContent() {
   const [cards, setCards] = useState<CardInput[]>([{ ...EMPTY }]);
   const [loading, setLoading] = useState(Boolean(id));
   const [loadError, setLoadError] = useState("");
+  // 404: o baralho foi excluído ou o link é antigo (tentar de novo não resolve)
+  const [notFound, setNotFound] = useState(false);
+  const { registrarSaida } = useSession();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [problema, setProblema] = useState<Problema | null>(null);
@@ -52,8 +82,11 @@ function EditarContent() {
     JSON.stringify({ title: "", description: "", questionLanguage: "", answerLanguage: "", cards: [EMPTY] })
   );
 
-  useEffect(() => {
+  const load = useCallback(() => {
     if (!id) return;
+    setLoading(true);
+    setLoadError("");
+    setNotFound(false);
     getSharedDeck(id)
       .then((deck) => {
         const loaded = {
@@ -70,9 +103,14 @@ function EditarContent() {
         setAnswerLanguage(loaded.answerLanguage);
         setCards(loaded.cards);
       })
-      .catch((e) => setLoadError(e instanceof ApiError ? e.message : "Não foi possível carregar o baralho."))
+      .catch((e) => {
+        if (e instanceof ApiError && e.status === 404) setNotFound(true);
+        else setLoadError(mensagemDeErro(e, "Não foi possível carregar o baralho."));
+      })
       .finally(() => setLoading(false));
   }, [id]);
+
+  useEffect(load, [load]);
 
   useEffect(() => {
     if (focusAfterRender.current) {
@@ -91,21 +129,28 @@ function EditarContent() {
     return () => window.removeEventListener("beforeunload", avisar);
   }, [dirty]);
 
-  const sair = async (e?: React.MouseEvent) => {
-    e?.preventDefault();
-    if (
-      dirty &&
-      !(await confirmar({
+  const podeSair = useCallback(
+    async () =>
+      !dirty ||
+      confirmar({
         titulo: "Sair sem salvar?",
         mensagem: "As mudanças neste baralho serão perdidas.",
         confirmar: "Sair sem salvar",
         cancelar: "Continuar editando",
         perigo: true,
-      }))
-    ) {
-      return;
-    }
-    router.push("/baralhos/");
+      }),
+    [dirty, confirmar]
+  );
+
+  // O menu lateral também pergunta antes de sair com mudanças
+  useEffect(() => {
+    registrarSaida(dirty ? podeSair : null);
+    return () => registrarSaida(null);
+  }, [dirty, podeSair, registrarSaida]);
+
+  const sair = async (e?: React.MouseEvent) => {
+    e?.preventDefault();
+    if (await podeSair()) router.push("/baralhos/");
   };
 
   const updateCard = (index: number, field: keyof CardInput, value: string) => {
@@ -175,7 +220,7 @@ function EditarContent() {
       guardarAviso(`“${title.trim()}” salvo, com ${plural(filled.length, "ficha", "fichas")}.`);
       router.push("/baralhos/");
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Não foi possível salvar. Tente de novo.");
+      setError(mensagemDeErro(err, "Não foi possível salvar. Tente de novo."));
       setSaving(false);
     }
   };
@@ -190,23 +235,20 @@ function EditarContent() {
       </span>
     );
 
-  const voltar = (
-    <Link href="/baralhos/" className="voltar" onClick={sair}>
-      <span aria-hidden="true">←</span> Baralhos compartilhados
-    </Link>
-  );
+  const voltar = <Voltar onClick={sair} />;
 
-  if (loading) {
+  if (loading) return <EditarLoading onVoltar={sair} />;
+
+  if (notFound) {
     return (
       <main id="conteudo">
-        {voltar}
-        <p role="status" className="sr-only">
-          Carregando baralho...
-        </p>
-        <div aria-hidden="true" className="cartao">
-          <span className="esqueleto" style={{ width: "50%", height: "2rem" }} />
-          <span className="esqueleto" style={{ width: "100%", height: "3rem" }} />
-          <span className="esqueleto" style={{ width: "100%", height: "5rem" }} />
+        <Voltar />
+        <h1>Baralho não encontrado</h1>
+        <p>Ele pode ter sido excluído, ou o link está incompleto.</p>
+        <div className="acoes">
+          <Link href="/baralhos/" className="botao">
+            Voltar aos baralhos compartilhados
+          </Link>
         </div>
       </main>
     );
@@ -215,16 +257,8 @@ function EditarContent() {
   if (loadError) {
     return (
       <main id="conteudo">
-        {voltar}
-        <h1>O baralho não carregou</h1>
-        <p role="alert" className="erro">
-          {loadError}
-        </p>
-        <div className="acoes">
-          <button type="button" onClick={() => window.location.reload()}>
-            Tentar de novo
-          </button>
-        </div>
+        <Voltar />
+        <ErroCarregar titulo="O baralho não carregou" mensagem={loadError} onTentar={load} />
       </main>
     );
   }
@@ -411,7 +445,7 @@ function EditarContent() {
 // useSearchParams exige Suspense no site estático
 export default function EditarPage() {
   return (
-    <Suspense fallback={<main id="conteudo"><p role="status">Carregando...</p></main>}>
+    <Suspense fallback={<EditarLoading />}>
       <EditarContent />
     </Suspense>
   );

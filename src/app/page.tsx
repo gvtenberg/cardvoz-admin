@@ -2,10 +2,9 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { ApiError, getStats, type Stats } from "@/lib/api";
+import { getStats, type Stats } from "@/lib/api";
+import { mensagemDeErro, plural } from "@/lib/texto";
 import { useSession } from "./Painel";
-
-const plural = (n: number, um: string, varios: string) => `${n} ${n === 1 ? um : varios}`;
 
 /** " (75% de acerto)", ou nada sem respostas */
 const aproveitamento = (acertos: number, erros: number) =>
@@ -20,7 +19,7 @@ export default function PainelPage() {
     setError("");
     getStats()
       .then(setStats)
-      .catch((e) => setError(e instanceof ApiError ? e.message : "Não foi possível carregar os números."));
+      .catch((e) => setError(mensagemDeErro(e, "Não foi possível carregar os números.")));
   }, []);
 
   useEffect(load, [load]);
