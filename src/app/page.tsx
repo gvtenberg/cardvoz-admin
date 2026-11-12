@@ -7,6 +7,10 @@ import { useSession } from "./Painel";
 
 const plural = (n: number, um: string, varios: string) => `${n} ${n === 1 ? um : varios}`;
 
+/** " (75% de acerto)", ou nada sem respostas */
+const aproveitamento = (acertos: number, erros: number) =>
+  acertos + erros > 0 ? ` (${Math.round((acertos / (acertos + erros)) * 100)}% de acerto)` : "";
+
 export default function PainelPage() {
   const { user } = useSession();
   const [stats, setStats] = useState<Stats | null>(null);
@@ -54,7 +58,7 @@ export default function PainelPage() {
             Carregando os números...
           </p>
           <div className="numeros" aria-hidden="true">
-            {Array.from({ length: 5 }, (_, i) => (
+            {Array.from({ length: 9 }, (_, i) => (
               <div key={i} className="cartao numero">
                 <span className="esqueleto" style={{ width: "60%", height: "1.25rem" }} />
                 <span className="esqueleto" style={{ width: "35%", height: "2.75rem" }} />
@@ -103,6 +107,42 @@ export default function PainelPage() {
               <span className="numero-extra">Rodadas guardadas nas contas</span>
             </dd>
           </div>
+          {stats.correctAnswers !== undefined && (
+            <>
+              <div className="cartao numero">
+                <dt>Respostas</dt>
+                <dd>
+                  <span className="numero-valor">{(stats.correctAnswers ?? 0) + (stats.incorrectAnswers ?? 0)}</span>
+                  <span className="numero-extra">
+                    {plural(stats.correctAnswers ?? 0, "acerto", "acertos")} e{" "}
+                    {plural(stats.incorrectAnswers ?? 0, "erro", "erros")}
+                    {aproveitamento(stats.correctAnswers ?? 0, stats.incorrectAnswers ?? 0)}
+                  </span>
+                </dd>
+              </div>
+              <div className="cartao numero">
+                <dt>Para revisar agora</dt>
+                <dd>
+                  <span className="numero-valor">{stats.cardsDueNow ?? 0}</span>
+                  <span className="numero-extra">Fichas na data de revisão, em todas as contas</span>
+                </dd>
+              </div>
+              <div className="cartao numero">
+                <dt>Estudaram na semana</dt>
+                <dd>
+                  <span className="numero-valor">{stats.activeLast7Days ?? 0}</span>
+                  <span className="numero-extra">Pessoas que estudaram nos últimos 7 dias</span>
+                </dd>
+              </div>
+              <div className="cartao numero">
+                <dt>E-mails confirmados</dt>
+                <dd>
+                  <span className="numero-valor">{stats.confirmedEmails ?? 0}</span>
+                  <span className="numero-extra">De {plural(stats.users, "conta", "contas")}</span>
+                </dd>
+              </div>
+            </>
+          )}
         </dl>
       )}
     </main>
