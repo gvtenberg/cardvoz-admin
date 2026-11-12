@@ -21,3 +21,11 @@ test("o resto da linha fica na resposta", () => {
   const { fichas } = colarFichas("Liste duas cores; azul; verde");
   assert.deepEqual(fichas, [{ question: "Liste duas cores", answer: "azul; verde" }]);
 });
+
+test("sem TAB, separa no primeiro ; ou | da linha", () => {
+  const { fichas } = colarFichas("a | b; c\nTAB\tvem; antes");
+  assert.deepEqual(fichas, [
+    { question: "a", answer: "b; c" },
+    { question: "TAB", answer: "vem; antes" },
+  ]);
+});

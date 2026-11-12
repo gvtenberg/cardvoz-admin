@@ -16,10 +16,24 @@ export default function EntrarPage() {
   const [sending, setSending] = useState(false);
   const emailRef = useRef<HTMLInputElement>(null);
 
-  // Volta do Google (?code=&state= ou ?error=): troca o código e limpa a URL
+  // Lê a URL uma vez só: na volta do Google (?code=&state= ou ?error=), troca o
+  // código; sem ela, tenta a sessão salva. Eram dois efeitos, e o primeiro limpava
+  // a URL antes de o segundo conferir, então a renovação corria junto com o login
+  // do Google e podia apagar o token novo
   useEffect(() => {
     const callback = readGoogleCallback(new URLSearchParams(window.location.search));
-    if (!callback) return;
+    if (!callback) {
+      // Já tem sessão de admin neste navegador: vai direto ao painel
+      restoreSession()
+        .then((user) => {
+          if (user) {
+            setUser(user);
+            router.replace("/");
+          }
+        })
+        .catch(() => {});
+      return;
+    }
     window.history.replaceState(null, "", "/entrar/");
     if (callback.kind === "error") {
       setError(callback.message);
@@ -35,19 +49,6 @@ export default function EntrarPage() {
         setError(err instanceof ApiError ? err.message : "Não foi possível entrar com o Google. Tente de novo.");
         setSending(false);
       });
-  }, [router, setUser]);
-
-  // Já tem sessão de admin neste navegador: vai direto ao painel
-  useEffect(() => {
-    if (new URLSearchParams(window.location.search).has("code")) return;
-    restoreSession()
-      .then((user) => {
-        if (user) {
-          setUser(user);
-          router.replace("/");
-        }
-      })
-      .catch(() => {});
   }, [router, setUser]);
 
   const handleSubmit = async (e: React.FormEvent) => {

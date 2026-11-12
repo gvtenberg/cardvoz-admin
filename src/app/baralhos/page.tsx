@@ -2,16 +2,20 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ApiError, deleteSharedDeck, formatDate, getSharedDecks, type Deck } from "@/lib/api";
+import { deleteSharedDeck, formatDate, getSharedDecks, type Deck } from "@/lib/api";
 import { lerAviso } from "@/lib/aviso";
+import { mensagemDeErro, plural } from "@/lib/texto";
 import { useConfirmar } from "../Confirmar";
-
-const plural = (n: number, um: string, varios: string) => `${n} ${n === 1 ? um : varios}`;
+import { ErroCarregar } from "../ErroCarregar";
 
 export default function BaralhosPage() {
   const [decks, setDecks] = useState<Deck[] | null>(null);
+  // Falha ao carregar (com "Tentar de novo") e falha ao excluir (só a mensagem)
   const [error, setError] = useState("");
+  const [actionError, setActionError] = useState("");
   const [status, setStatus] = useState("");
+  // Trava durante a exclusão: um segundo toque mandaria outro DELETE (e um erro 404)
+  const [busyId, setBusyId] = useState<string | null>(null);
   const tituloRef = useRef<HTMLHeadingElement>(null);
   const [confirmar, dialogo] = useConfirmar();
 
@@ -19,7 +23,7 @@ export default function BaralhosPage() {
     setError("");
     getSharedDecks()
       .then(setDecks)
-      .catch((e) => setError(e instanceof ApiError ? e.message : "Não foi possível carregar os baralhos."));
+      .catch((e) => setError(mensagemDeErro(e, "Não foi possível carregar os baralhos.")));
   }, []);
 
   useEffect(() => {
@@ -30,6 +34,7 @@ export default function BaralhosPage() {
   }, [load]);
 
   const remove = async (deck: Deck) => {
+    if (busyId) return;
     const ok = await confirmar({
       titulo: `Excluir “${deck.title}”?`,
       mensagem: `O baralho e ${plural(deck.cardCount, "ficha", "fichas")} saem de “Baralhos prontos”. Quem já adicionou uma cópia continua com ela.`,
@@ -37,7 +42,8 @@ export default function BaralhosPage() {
       perigo: true,
     });
     if (!ok) return;
-    setError("");
+    setBusyId(deck.id);
+    setActionError("");
     setStatus("");
     try {
       await deleteSharedDeck(deck.id);
@@ -46,7 +52,9 @@ export default function BaralhosPage() {
       // O cartão (e o botão que tinha o foco) sumiu: o foco volta para o título da página
       tituloRef.current?.focus();
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : "Não foi possível excluir. Tente de novo.");
+      setActionError(mensagemDeErro(e, "Não foi possível excluir. Tente de novo."));
+    } finally {
+      setBusyId(null);
     }
   };
 
@@ -70,18 +78,12 @@ export default function BaralhosPage() {
       <p role="status" className={status ? "sucesso" : "sr-only"}>
         {status}
       </p>
-      {error && (
-        <div className="cartao">
-          <p role="alert" className="erro">
-            {error}
-          </p>
-          <div className="acoes">
-            <button type="button" onClick={load}>
-              Tentar de novo
-            </button>
-          </div>
-        </div>
+      {actionError && (
+        <p role="alert" className="erro">
+          {actionError}
+        </p>
       )}
+      {error && <ErroCarregar mensagem={error} onTentar={load} />}
 
       {!decks && !error && (
         <>
@@ -130,8 +132,14 @@ export default function BaralhosPage() {
                 >
                   Editar
                 </Link>
-                <button type="button" className="perigo" onClick={() => remove(deck)} aria-label={`Excluir: ${deck.title}`}>
-                  Excluir
+                <button
+                  type="button"
+                  className="perigo"
+                  onClick={() => remove(deck)}
+                  aria-disabled={busyId === deck.id || undefined}
+                  aria-label={`Excluir: ${deck.title}`}
+                >
+                  {busyId === deck.id ? "Excluindo..." : "Excluir"}
                 </button>
               </div>
             </li>

@@ -3,12 +3,21 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { ApiError, logout, restoreSession, type User } from "@/lib/api";
+import { ApiError, logout, onLogoutElsewhere, restoreSession, type User } from "@/lib/api";
 import { Logo } from "./Logo";
 
-const SessionContext = createContext<{ user: User | null; setUser: (user: User) => void }>({
+/** Pergunta antes de sair de uma página com mudanças sem salvar; true = pode sair. */
+type GuardaSaida = () => Promise<boolean>;
+
+const SessionContext = createContext<{
+  user: User | null;
+  setUser: (user: User) => void;
+  /** A página com mudanças registra a pergunta; null quando não há o que perder. */
+  registrarSaida: (guarda: GuardaSaida | null) => void;
+}>({
   user: null,
   setUser: () => {},
+  registrarSaida: () => {},
 });
 
 /** Admin logado (null só na tela de entrar). */
@@ -30,6 +39,30 @@ export function Painel({ children }: { children: React.ReactNode }) {
   const [menuAberto, setMenuAberto] = useState(false);
   const menuBotaoRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const guardaSaida = useRef<GuardaSaida | null>(null);
+  const registrarSaida = useCallback((guarda: GuardaSaida | null) => {
+    guardaSaida.current = guarda;
+  }, []);
+
+  /**
+   * Os links do menu passam pela pergunta da página (ex.: editor com fichas sem
+   * salvar). Sem isso, tocar em "Usuários" no meio da edição perdia tudo sem aviso.
+   */
+  const sairPara = async (e: React.MouseEvent, depois: () => void) => {
+    const guarda = guardaSaida.current;
+    if (!guarda) {
+      depois();
+      return;
+    }
+    e.preventDefault();
+    // Fecha o menu antes: com ele aberto, o conteúdo (e a pergunta) fica inerte
+    setMenuAberto(false);
+    if (await guarda()) {
+      guardaSaida.current = null;
+      depois();
+    }
+  };
+  const irPara = (href: string) => (e: React.MouseEvent) => sairPara(e, () => router.push(href));
 
   const check = useCallback(() => {
     setError("");
@@ -41,6 +74,16 @@ export function Painel({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!isLogin && !user) check();
   }, [isLogin, user, check]);
+
+  // Sair numa aba sai em todas: as outras voltam para a tela de entrar
+  useEffect(
+    () =>
+      onLogoutElsewhere(() => {
+        setUser(null);
+        router.replace("/entrar/");
+      }),
+    [router]
+  );
 
   // Fecha ao trocar de página
   useEffect(() => {
@@ -68,11 +111,12 @@ export function Painel({ children }: { children: React.ReactNode }) {
     };
   }, [menuAberto]);
 
-  const handleLogout = () => {
-    logout();
-    setUser(null);
-    router.replace("/entrar/");
-  };
+  const handleLogout = (e: React.MouseEvent) =>
+    sairPara(e, () => {
+      logout();
+      setUser(null);
+      router.replace("/entrar/");
+    });
 
   let content = children;
   if (!isLogin && error) {
@@ -102,15 +146,19 @@ export function Painel({ children }: { children: React.ReactNode }) {
   }
 
   if (!user || isLogin) {
-    return <SessionContext.Provider value={{ user, setUser }}>{content}</SessionContext.Provider>;
+    return <SessionContext.Provider value={{ user, setUser, registrarSaida }}>{content}</SessionContext.Provider>;
   }
 
   return (
-    <SessionContext.Provider value={{ user, setUser }}>
+    <SessionContext.Provider value={{ user, setUser, registrarSaida }}>
+      {/* Sem ele, quem usa teclado passa pela marca, pelos links e por "Sair" em toda página */}
+      <a href="#conteudo" className="pular">
+        Pular para o conteúdo
+      </a>
       <div className="app">
         {/* Só no celular: marca e botão que abre o menu */}
         <header className="barra-topo">
-          <Link href="/" className="marca">
+          <Link href="/" className="marca" onClick={irPara("/")}>
             <Logo tamanho={36} />
             <span>CardVoz</span>
             <span className="selo selo-admin">Admin</span>
@@ -135,7 +183,7 @@ export function Painel({ children }: { children: React.ReactNode }) {
         </header>
 
         <div id="menu-lateral" ref={menuRef} className={`lateral${menuAberto ? " aberta" : ""}`}>
-          <Link href="/" className="marca lateral-marca">
+          <Link href="/" className="marca lateral-marca" onClick={irPara("/")}>
             <Logo tamanho={40} />
             <span>CardVoz</span>
             <span className="selo selo-admin">Admin</span>
@@ -146,7 +194,7 @@ export function Painel({ children }: { children: React.ReactNode }) {
                 const current = href === "/" ? pathname === "/" : pathname.startsWith(href);
                 return (
                   <li key={href}>
-                    <Link href={href} aria-current={current ? "page" : undefined}>
+                    <Link href={href} aria-current={current ? "page" : undefined} onClick={irPara(href)}>
                       {label}
                     </Link>
                   </li>

@@ -1,19 +1,23 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ApiError, deleteUser, formatDate, getUsers, setAdmin, type AdminUser } from "@/lib/api";
+import { deleteUser, formatDate, getUsers, setAdmin, type AdminUser } from "@/lib/api";
+import { mensagemDeErro, plural } from "@/lib/texto";
 import { useConfirmar } from "../Confirmar";
+import { ErroCarregar } from "../ErroCarregar";
 import { useSession } from "../Painel";
 
-const message = (e: unknown) => (e instanceof ApiError ? e.message : "Algo deu errado. Tente de novo.");
-const plural = (n: number, um: string, varios: string) => `${n} ${n === 1 ? um : varios}`;
+const message = (e: unknown) => mensagemDeErro(e, "Algo deu errado. Tente de novo.");
 // Busca sem diferença de maiúsculas e acentos ("elida" acha "Élida")
 const normalizar = (texto: string) => texto.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
 
 export default function UsuariosPage() {
   const { user: me } = useSession();
   const [users, setUsers] = useState<AdminUser[] | null>(null);
+  // Falha ao carregar (com "Tentar de novo") e falha de uma ação (só a mensagem:
+  // "Tentar de novo" recarregaria a lista, não repetiria a ação)
   const [error, setError] = useState("");
+  const [actionError, setActionError] = useState("");
   const [status, setStatus] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
@@ -27,16 +31,19 @@ export default function UsuariosPage() {
 
   useEffect(load, [load]);
 
+  /** Devolve se deu certo. */
   const run = async (target: AdminUser, action: () => Promise<void>, done: string) => {
     setBusyId(target.id);
-    setError("");
+    setActionError("");
     setStatus("");
     try {
       await action();
       setStatus(done);
       load();
+      return true;
     } catch (e) {
-      setError(message(e));
+      setActionError(message(e));
+      return false;
     } finally {
       setBusyId(null);
     }
@@ -70,9 +77,9 @@ export default function UsuariosPage() {
       perigo: true,
     });
     if (!ok) return;
-    await run(u, () => deleteUser(u.id), `Conta de ${u.name} excluída.`);
-    // O cartão (e o botão que tinha o foco) sumiu: o foco volta para a busca
-    buscaRef.current?.focus();
+    // O cartão (e o botão que tinha o foco) sumiu: o foco volta para a busca.
+    // Se falhou, o cartão continua e o foco fica nele
+    if (await run(u, () => deleteUser(u.id), `Conta de ${u.name} excluída.`)) buscaRef.current?.focus();
   };
 
   const termo = normalizar(query.trim());
@@ -95,18 +102,12 @@ export default function UsuariosPage() {
       <p role="status" className={status ? "sucesso" : "sr-only"}>
         {status}
       </p>
-      {error && (
-        <div className="cartao">
-          <p role="alert" className="erro">
-            {error}
-          </p>
-          <div className="acoes">
-            <button type="button" onClick={load}>
-              Tentar de novo
-            </button>
-          </div>
-        </div>
+      {actionError && (
+        <p role="alert" className="erro">
+          {actionError}
+        </p>
       )}
+      {error && <ErroCarregar mensagem={error} onTentar={load} />}
 
       {!users && !error && (
         <>
