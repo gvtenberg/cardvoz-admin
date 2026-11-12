@@ -13,7 +13,7 @@ O painel é usado **só pela equipe** do CardVoz: números gerais, usuários (ad
 3. **Site estático** (`output: "export"`): nada que dependa de servidor Next (rotas dinâmicas `[id]`, API routes, middleware). Dados variáveis vão na query string (`/baralhos/editar/?id=`).
 4. **Visual livre.** O painel não é usado pelas pessoas cegas e com baixa visão, então não precisa seguir as cores, o contraste AAA nem os tokens do site (decisão da equipe, nov/2026). Mantenha o básico de acessibilidade: rótulos nos campos, `<dialog>` nativo, foco visível e erros com `role="alert"`.
 5. **Commits sem atribuição a IA.** Sem `Co-Authored-By`, "Generated with…" ou menção a IA em commits e PRs.
-6. **Push na `main` publica** (GitHub Actions + deploy hook do Render, se configurado). Trabalhe numa branch e abra PR.
+6. **Push na `main` publica** (GitHub Actions + deploy hook do Render, se configurado). Nunca faça push direto na `main`: trabalhe numa branch e abra PR (seção 5).
 
 ## 2. O sistema (4 repositórios)
 
@@ -52,5 +52,10 @@ Estas regras vieram de conversas da equipe com assistentes de IA e valem para to
 - **Português do Brasil** em respostas, comentários, commits, PRs e documentação. Quando a pessoa disser que entendeu, siga para o próximo passo sem repetir a explicação.
 - **Documentação em toda mudança:** README e este arquivo atualizados junto.
 - **Trabalho dividido:** cada repositório tem dono no grupo (este é do `fiuzaheitor`). Mudança que exige rota nova na API ou coluna nova no banco começa por lá (`docs/tarefas/` da `cardvoz-api`); publique na ordem banco → API → painel.
+- **Fluxo de branch e PR (vale para pessoas e para qualquer agente de IA):**
+  - **Nunca faça push direto na `main`.** Commits numa branch (`feat/...`, `fix/...`, `docs/...`), push para o repositório de publicação e PR para a `main` dele. Quem faz o merge é uma pessoa da equipe, pelo PR.
+  - **Repositórios de publicação (nov/2026):** site `gvtenberg/cardvoz` e API `gvtenberg/cardvoz-api` (o merge na `main` publica no Render); banco `gvtenberg/cardvoz-db` (a migration vai ao Supabase com `npx supabase db push --remote`, antes do merge da API que a usa); painel `fiuzaheitor/cardvoz-admin`. Os repositórios `fiuzaheitor/cardvoz-api` e `fiuzaheitor/cardvoz-db` são os originais: não abra PR neles sem combinar com o dono. Ao abrir PR a partir de um fork, confira o **base repository**: o GitHub sugere o original.
+  - **Mudança que depende de outra:** um PR por repositório, na ordem **banco → API → site → painel**, e cada PR diz do que depende.
+  - **Ao terminar** (resposta de um agente de IA, mensagem no grupo ou descrição do PR), informe sempre, no mesmo formato: (1) o que foi enviado, com repositório e branch; (2) os links dos PRs, numerados na ordem de merge; (3) o que cada merge publica; (4) o que precisa ser configurado ou feito à mão (migration, variáveis de ambiente, Google Cloud, Render). Sem a ferramenta `gh`, o link do PR é `https://github.com/<dono>/<repo>/compare/main...<branch>?expand=1` (dá para preencher `&title=` e `&body=`). A pessoa não deve precisar perguntar o que foi feito.
 - **Problemas** viram issue no GitHub do repositório certo. O commit que corrige cita a issue (`Closes #10`).
 - **Histórico (nov/2026):** entrar com Google no painel e idioma das fichas nos baralhos compartilhados.
