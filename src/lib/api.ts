@@ -69,6 +69,8 @@ export class ApiError extends Error {
 
 let accessToken: string | null = null;
 let refreshing: Promise<User | null> | null = null;
+// Muda a cada "Sair": uma renovação que termina depois não grava a sessão de volta
+let sessionEpoch = 0;
 
 async function send(path: string, init: RequestInit = {}): Promise<Response> {
   const headers = new Headers(init.headers);
@@ -170,19 +172,38 @@ export function restoreSession(): Promise<User | null> {
 }
 
 async function renew(): Promise<User | null> {
+  const epoch = sessionEpoch;
   // Lido dentro da trava: se outra aba renovou enquanto esperávamos, usa o token novo dela
   const refreshToken = getRefreshToken();
   if (!refreshToken) return null;
   const response = await send("/auth/refresh", { method: "POST", body: JSON.stringify({ refreshToken }) });
+  // A pessoa saiu enquanto a renovação esperava a resposta: não traz a sessão de volta
+  if (epoch !== sessionEpoch) return null;
   if (response.status === 400 || response.status === 401) {
     forget();
     return null;
   }
   if (!response.ok) throw await toError(response);
-  return keepIfAdmin(await response.json());
+  const auth: AuthResponse = await response.json();
+  if (epoch !== sessionEpoch) return null;
+  return keepIfAdmin(auth);
+}
+
+/** Avisa quando outra aba saiu do painel (o refreshToken some do localStorage). */
+export function onLogoutElsewhere(callback: () => void): () => void {
+  const listener = (e: StorageEvent) => {
+    if (e.key === REFRESH_KEY && e.newValue === null) {
+      accessToken = null;
+      sessionEpoch++;
+      callback();
+    }
+  };
+  window.addEventListener("storage", listener);
+  return () => window.removeEventListener("storage", listener);
 }
 
 export function logout() {
+  sessionEpoch++;
   const refreshToken = getRefreshToken();
   forget();
   if (refreshToken) {
