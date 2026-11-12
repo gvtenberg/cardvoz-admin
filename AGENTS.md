@@ -32,8 +32,11 @@ O painel é usado **só pela equipe** do CardVoz: números gerais, usuários (ad
 
 ```
 src/app/            páginas: / (números), /entrar/, /usuarios/, /baralhos/ (+ editar/?id=)
-src/app/Painel.tsx  menu lateral e sessão; sem sessão de admin, manda para /entrar/
-src/lib/api.ts      sessão e chamadas à API
+src/app/Painel.tsx  menu lateral, "Pular para o conteúdo" e sessão; sem sessão de admin, manda para /entrar/.
+                    registrarSaida(): página com mudanças sem salvar pergunta antes de o menu trocar de página
+src/app/ErroCarregar.tsx  falha ao carregar + "Tentar de novo" (erro de ação fica à parte, só com a mensagem)
+src/lib/api.ts      sessão e chamadas à API; sair numa aba sai em todas
+src/lib/texto.ts    plural() e mensagemDeErro(), usados por todas as telas
 src/lib/google.ts   entrar com Google (authorization code + PKCE, igual ao site)
 src/lib/colarFichas.mjs  leitor de "Colar várias fichas" (npm test)
 ```
@@ -43,7 +46,7 @@ src/lib/colarFichas.mjs  leitor de "Colar várias fichas" (npm test)
 - Interface, comentários, commits e documentação em **português do Brasil**.
 - Commits no formato Conventional Commits (`feat:`, `fix:`, `docs:`).
 - Comentários explicam o porquê, não o óbvio.
-- Antes de concluir: `npm run lint`, `npx tsc --noEmit`, `npm test` e `npm run build` passando.
+- Antes de concluir: `npx tsc --noEmit`, `npm test` e `npm run build` passando (o painel não tem ESLint).
 
 ## 5. Combinados da equipe
 

@@ -45,9 +45,15 @@ src/
 ├── app/
 │   ├── layout.tsx            # Página base com o Painel (cabeçalho e proteção)
 │   ├── Painel.tsx            # Menu lateral (no celular, botão "Menu") e sessão de admin; sem ela, manda para /entrar/
+│   ├── ErroCarregar.tsx      # Erro ao carregar com "Tentar de novo"
+│   ├── Confirmar.tsx         # Confirmação em <dialog> (excluir, admin, sair sem salvar)
 │   ├── page.tsx              # /            Números gerais
-│   ├── entrar/               # /entrar/     Login (e-mail e senha)
+│   ├── entrar/               # /entrar/     Login (e-mail e senha ou Google)
 │   ├── usuarios/             # /usuarios/   Contas, admin e exclusão
 │   └── baralhos/             # /baralhos/   Baralhos compartilhados (+ editar/?id=)
-└── lib/api.ts                # Sessão (token em memória, renovação no 401) e chamadas à API
+└── lib/
+    ├── api.ts                # Sessão (token em memória, renovação no 401) e chamadas à API
+    ├── google.ts             # Entrar com Google (authorization code + PKCE)
+    ├── texto.ts              # plural() e mensagemDeErro()
+    └── colarFichas.mjs       # Leitor de "Colar várias fichas" (npm test)
 ```
