@@ -11,7 +11,9 @@ Painel da equipe do [CardVoz](https://github.com/gvtenberg/cardvoz) para:
 
 ## Quem pode entrar
 
-Só contas do CardVoz com `IsAdmin`, entrando com **e-mail e senha** (contas que usam só o Google precisam criar uma senha no CardVoz). A API confere o admin em toda chamada, então tirar o acesso vale na hora.
+Só contas do CardVoz com `IsAdmin`, entrando com **e-mail e senha** ou com **Google**. A API confere o admin em toda chamada, então tirar o acesso vale na hora.
+
+**Google no painel:** gere o build com `NEXT_PUBLIC_GOOGLE_CLIENT_ID` (o mesmo ID do site), cadastre `https://<painel>/entrar/` (e `http://localhost:3001/entrar/` para testar) em "URIs de redirecionamento autorizados" do cliente OAuth no Google Cloud, e confira se a origem do painel está em `CORS_ALLOWED_ORIGINS` da API (a API só aceita voltar para `/entrar/` de origens liberadas). Sem a variável, o botão não aparece.
 
 O primeiro admin é definido no Supabase (veja o README do [cardvoz-db](https://github.com/fiuzaheitor/cardvoz-db), seção "Primeiro admin do painel"). Os seguintes, na página **Usuários** do painel. Ninguém tira o próprio acesso nem exclui a própria conta pelo painel.
 
@@ -32,6 +34,7 @@ A `cardvoz-api` precisa estar rodando e liberar `http://localhost:3001` em `CORS
    - Build command: `npm ci && npm run build`
    - Publish directory: `out`
    - Variável: `NEXT_PUBLIC_API_URL=https://<api>.onrender.com/api` (gravada no build: mudou, refaça o deploy)
+   - Opcional: `NEXT_PUBLIC_GOOGLE_CLIENT_ID` para o botão "Entrar com Google"
 2. Na API, acrescente o endereço do painel em `CORS_ALLOWED_ORIGINS` (separado por vírgula, sem barra no final).
 3. Opcional: copie o deploy hook do site no Render para o secret `RENDER_DEPLOY_HOOK_URL` deste repositório. Assim, cada push na `main` publica o painel depois do build passar.
 

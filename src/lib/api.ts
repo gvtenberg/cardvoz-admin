@@ -129,6 +129,18 @@ export async function login(email: string, password: string): Promise<User> {
   return user;
 }
 
+/** Troca o código da volta do Google pelos tokens da API; só guarda a sessão se for admin. */
+export async function loginWithGoogle(code: string, codeVerifier: string, redirectUri: string): Promise<User> {
+  const response = await send("/auth/google", {
+    method: "POST",
+    body: JSON.stringify({ code, codeVerifier, redirectUri }),
+  });
+  if (!response.ok) throw await toError(response);
+  const user = keepIfAdmin(await response.json());
+  if (!user) throw new ApiError(403, "Esta conta não é de admin. Peça acesso a outra pessoa da equipe.");
+  return user;
+}
+
 /**
  * Restaura ou renova a sessão. Uma renovação por vez, inclusive entre abas
  * (navigator.locks): repetir o mesmo refreshToken faz a API recusar o segundo
