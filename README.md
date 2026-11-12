@@ -5,7 +5,7 @@ Painel da equipe do [CardVoz](https://github.com/gvtenberg/cardvoz) para:
 - ver os números gerais (usuários, baralhos, fichas, sessões de estudo);
 - gerenciar usuários: ver quem entra com senha ou Google, dar e tirar o acesso de admin, excluir contas;
 - criar, editar e excluir **baralhos compartilhados**, que aparecem em "Baralhos prontos" no CardVoz. Cada pessoa adiciona uma cópia aos próprios baralhos; mudar ou excluir o compartilhado não altera as cópias já feitas.
-  No editor, "Colar várias fichas" aceita uma lista (uma ficha por linha, `pergunta; resposta`) ou duas colunas copiadas de uma planilha.
+  No editor, "Idioma das perguntas" e "Idioma das respostas" (ex.: um baralho de inglês) fazem o leitor de tela de quem copiar pronunciar no idioma certo. "Colar várias fichas" aceita uma lista (uma ficha por linha, `pergunta; resposta`) ou duas colunas copiadas de uma planilha.
 
 É um site estático em Next.js (pasta `out/`) que chama a [cardvoz-api](https://github.com/fiuzaheitor/cardvoz-api) pelo navegador, nas rotas `/api/admin/*`.
 

@@ -41,6 +41,9 @@ export interface Deck {
   cardCount: number;
   createdAt: string;
   updatedAt?: string | null;
+  /** Idioma das perguntas e das respostas (ex.: "en"); ausente = português */
+  questionLanguage?: string | null;
+  answerLanguage?: string | null;
 }
 
 export interface CardInput {
@@ -209,7 +212,10 @@ export const deleteUser = (id: string) => api<void>(`/admin/users/${id}`, { meth
 export const getSharedDecks = () => api<Deck[]>("/admin/shared-decks");
 export const getSharedDeck = (id: string) => api<DeckDetail>(`/admin/shared-decks/${id}`);
 /** Cria (sem id) ou substitui título, descrição e fichas (com id). */
-export const saveSharedDeck = (id: string | null, data: { title: string; description: string; cards: CardInput[] }) =>
+export const saveSharedDeck = (
+  id: string | null,
+  data: { title: string; description: string; questionLanguage: string; answerLanguage: string; cards: CardInput[] }
+) =>
   api<Deck>(id ? `/admin/shared-decks/${id}` : "/admin/shared-decks", {
     method: id ? "PUT" : "POST",
     body: JSON.stringify(data),
