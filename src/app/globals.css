@@ -118,6 +118,29 @@ a {
   outline: none;
 }
 
+/* Rolar até um campo com Tab não o deixa escondido atrás da barra fixa de salvar (WCAG 2.4.11) */
+html {
+  scroll-padding-bottom: 7rem;
+}
+
+/* "Pular para o conteúdo": aparece só quando recebe o foco do teclado */
+.pular {
+  position: absolute;
+  left: 1rem;
+  top: -10rem;
+  z-index: 100;
+  padding: 0.75rem 1.25rem;
+  border-radius: 999px;
+  background: var(--primary);
+  color: var(--primary-fg);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.pular:focus {
+  top: 1rem;
+}
+
 .sr-only {
   position: absolute;
   width: 1px;
