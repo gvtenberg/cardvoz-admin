@@ -21,6 +21,12 @@ export interface Stats {
   sharedDecks: number;
   cards: number;
   studySessions: number;
+  /** Números de estudo (API de nov/2026; ausentes na API antiga) */
+  correctAnswers?: number;
+  incorrectAnswers?: number;
+  cardsDueNow?: number;
+  activeLast7Days?: number;
+  confirmedEmails?: number;
 }
 
 export interface AdminUser {
