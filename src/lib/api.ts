@@ -41,6 +41,9 @@ export interface Deck {
   cardCount: number;
   createdAt: string;
   updatedAt?: string | null;
+  /** Idioma das perguntas e das respostas (ex.: "en"); ausente = português */
+  questionLanguage?: string | null;
+  answerLanguage?: string | null;
 }
 
 export interface CardInput {
@@ -129,6 +132,18 @@ export async function login(email: string, password: string): Promise<User> {
   return user;
 }
 
+/** Troca o código da volta do Google pelos tokens da API; só guarda a sessão se for admin. */
+export async function loginWithGoogle(code: string, codeVerifier: string, redirectUri: string): Promise<User> {
+  const response = await send("/auth/google", {
+    method: "POST",
+    body: JSON.stringify({ code, codeVerifier, redirectUri }),
+  });
+  if (!response.ok) throw await toError(response);
+  const user = keepIfAdmin(await response.json());
+  if (!user) throw new ApiError(403, "Esta conta não é de admin. Peça acesso a outra pessoa da equipe.");
+  return user;
+}
+
 /**
  * Restaura ou renova a sessão. Uma renovação por vez, inclusive entre abas
  * (navigator.locks): repetir o mesmo refreshToken faz a API recusar o segundo
@@ -197,7 +212,10 @@ export const deleteUser = (id: string) => api<void>(`/admin/users/${id}`, { meth
 export const getSharedDecks = () => api<Deck[]>("/admin/shared-decks");
 export const getSharedDeck = (id: string) => api<DeckDetail>(`/admin/shared-decks/${id}`);
 /** Cria (sem id) ou substitui título, descrição e fichas (com id). */
-export const saveSharedDeck = (id: string | null, data: { title: string; description: string; cards: CardInput[] }) =>
+export const saveSharedDeck = (
+  id: string | null,
+  data: { title: string; description: string; questionLanguage: string; answerLanguage: string; cards: CardInput[] }
+) =>
   api<Deck>(id ? `/admin/shared-decks/${id}` : "/admin/shared-decks", {
     method: id ? "PUT" : "POST",
     body: JSON.stringify(data),

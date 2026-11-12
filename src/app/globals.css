@@ -494,7 +494,8 @@ button.texto.perigo-texto {
 }
 
 input,
-textarea {
+textarea,
+select {
   width: 100%;
   min-height: 48px;
   padding: 0.625rem 0.875rem;
@@ -511,7 +512,8 @@ textarea {
 }
 
 input:focus-visible,
-textarea:focus-visible {
+textarea:focus-visible,
+select:focus-visible {
   border-color: var(--primary);
 }
 

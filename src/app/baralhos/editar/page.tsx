@@ -17,11 +17,24 @@ interface Problema {
   mensagem: string;
 }
 
+/** Mesma lista do site (src/lib/languages.ts); "" = português, o padrão */
+const IDIOMAS = [
+  { value: "", label: "Português" },
+  { value: "en", label: "Inglês" },
+  { value: "es", label: "Espanhol" },
+  { value: "fr", label: "Francês" },
+  { value: "it", label: "Italiano" },
+  { value: "de", label: "Alemão" },
+];
+
 function EditarContent() {
   const router = useRouter();
   const id = useSearchParams().get("id");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  // Idioma das fichas: o leitor de tela de quem copiar o baralho pronuncia nesse idioma ("" = português)
+  const [questionLanguage, setQuestionLanguage] = useState("");
+  const [answerLanguage, setAnswerLanguage] = useState("");
   const [cards, setCards] = useState<CardInput[]>([{ ...EMPTY }]);
   const [loading, setLoading] = useState(Boolean(id));
   const [loadError, setLoadError] = useState("");
@@ -35,7 +48,9 @@ function EditarContent() {
   // Campo que recebe o foco depois que a lista de fichas mudar (adicionar, remover, colar)
   const focusAfterRender = useRef<string | null>(null);
   // Conteúdo salvo, para saber se há mudanças sem salvar
-  const salvo = useRef(JSON.stringify({ title: "", description: "", cards: [EMPTY] }));
+  const salvo = useRef(
+    JSON.stringify({ title: "", description: "", questionLanguage: "", answerLanguage: "", cards: [EMPTY] })
+  );
 
   useEffect(() => {
     if (!id) return;
@@ -44,11 +59,15 @@ function EditarContent() {
         const loaded = {
           title: deck.title,
           description: deck.description ?? "",
+          questionLanguage: deck.questionLanguage ?? "",
+          answerLanguage: deck.answerLanguage ?? "",
           cards: deck.cards.map(({ question, answer }) => ({ question, answer })),
         };
         salvo.current = JSON.stringify(loaded);
         setTitle(loaded.title);
         setDescription(loaded.description);
+        setQuestionLanguage(loaded.questionLanguage);
+        setAnswerLanguage(loaded.answerLanguage);
         setCards(loaded.cards);
       })
       .catch((e) => setLoadError(e instanceof ApiError ? e.message : "Não foi possível carregar o baralho."))
@@ -62,7 +81,7 @@ function EditarContent() {
     }
   }, [cards]);
 
-  const dirty = !loading && JSON.stringify({ title, description, cards }) !== salvo.current;
+  const dirty = !loading && JSON.stringify({ title, description, questionLanguage, answerLanguage, cards }) !== salvo.current;
 
   // Fechar a aba ou recarregar com mudanças: o navegador pergunta antes
   useEffect(() => {
@@ -145,8 +164,14 @@ function EditarContent() {
     setProblema(null);
     setSaving(true);
     try {
-      await saveSharedDeck(id, { title: title.trim(), description: description.trim(), cards: filled });
-      salvo.current = JSON.stringify({ title, description, cards });
+      await saveSharedDeck(id, {
+        title: title.trim(),
+        description: description.trim(),
+        questionLanguage,
+        answerLanguage,
+        cards: filled,
+      });
+      salvo.current = JSON.stringify({ title, description, questionLanguage, answerLanguage, cards });
       guardarAviso(`“${title.trim()}” salvo, com ${plural(filled.length, "ficha", "fichas")}.`);
       router.push("/baralhos/");
     } catch (err) {
@@ -256,6 +281,26 @@ function EditarContent() {
               maxLength={1000}
               onChange={(e) => setDescription(e.target.value)}
             />
+          </label>
+          <label className="campo">
+            Idioma das perguntas
+            <select value={questionLanguage} onChange={(e) => setQuestionLanguage(e.target.value)}>
+              {IDIOMAS.map((l) => (
+                <option key={l.value} value={l.value}>
+                  {l.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="campo">
+            Idioma das respostas
+            <select value={answerLanguage} onChange={(e) => setAnswerLanguage(e.target.value)}>
+              {IDIOMAS.map((l) => (
+                <option key={l.value} value={l.value}>
+                  {l.label}
+                </option>
+              ))}
+            </select>
           </label>
         </section>
 
