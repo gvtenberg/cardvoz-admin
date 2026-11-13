@@ -2,10 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ApiError, login, loginWithGoogle, restoreSession } from "@/lib/api";
+import { ApiError, login, loginWithAdminPass, loginWithGoogle, readAdminPass, restoreSession, type User } from "@/lib/api";
 import { getGoogleRedirectUri, isGoogleConfigured, readGoogleCallback, startGoogleLogin } from "@/lib/google";
 import { Logo } from "../Logo";
 import { useSession } from "../Painel";
+
+// Troca do passe em andamento. Fora do componente porque, no modo de desenvolvimento,
+// o React roda o efeito duas vezes, e o passe só vale uma
+let pendingPass: Promise<User> | null = null;
 
 export default function EntrarPage() {
   const router = useRouter();
@@ -21,6 +25,30 @@ export default function EntrarPage() {
   // a URL antes de o segundo conferir, então a renovação corria junto com o login
   // do Google e podia apagar o token novo
   useEffect(() => {
+    // Veio do Perfil do site com o passe: entra sem pedir login. Tira o código da
+    // barra de endereço antes de tudo (não fica no histórico)
+    const pass = readAdminPass(window.location.hash);
+    if (pass) {
+      window.history.replaceState(null, "", "/entrar/");
+      pendingPass = loginWithAdminPass(pass);
+    }
+    if (pendingPass) {
+      setSending(true);
+      pendingPass
+        .then((user) => {
+          setUser(user);
+          router.replace("/");
+        })
+        .catch((err) => {
+          setError(err instanceof ApiError ? err.message : "Não foi possível abrir o painel. Entre com a sua conta.");
+          setSending(false);
+        })
+        .finally(() => {
+          pendingPass = null;
+        });
+      return;
+    }
+
     const callback = readGoogleCallback(new URLSearchParams(window.location.search));
     if (!callback) {
       // Já tem sessão de admin neste navegador: vai direto ao painel

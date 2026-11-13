@@ -153,6 +153,34 @@ export async function loginWithGoogle(code: string, codeVerifier: string, redire
 }
 
 /**
+ * Lê o passe que o site do CardVoz põe no endereço (/entrar/#passe=...) ao tocar em
+ * "Abrir painel Admin". Fica depois do #, então não vai a servidor nenhum.
+ */
+export function readAdminPass(hash: string): string | null {
+  const code = new URLSearchParams(hash.replace(/^#/, "")).get("passe");
+  return code && code.length <= 100 ? code : null;
+}
+
+/**
+ * Troca o passe (uso único, 1 minuto) por uma sessão nova do painel, sem pedir
+ * login. Uma sessão antiga deste navegador é encerrada: o passe pode ser de outra conta.
+ */
+export async function loginWithAdminPass(code: string): Promise<User> {
+  const response = await send("/auth/admin-pass/redeem", { method: "POST", body: JSON.stringify({ code }) });
+  if (!response.ok) throw await toError(response);
+  const auth: AuthResponse = await response.json();
+  const previous = getRefreshToken();
+  if (previous && previous !== auth.refreshToken) {
+    send("/auth/logout", { method: "POST", body: JSON.stringify({ refreshToken: previous }) }).catch(() => {});
+  }
+  // Uma renovação da sessão antiga que termine depois não grava por cima desta
+  sessionEpoch++;
+  const user = keepIfAdmin(auth);
+  if (!user) throw new ApiError(403, "Esta conta não é de admin. Peça acesso a outra pessoa da equipe.");
+  return user;
+}
+
+/**
  * Restaura ou renova a sessão. Uma renovação por vez, inclusive entre abas
  * (navigator.locks): repetir o mesmo refreshToken faz a API recusar o segundo
  * pedido, e a aba recusada apagaria o token novo que a outra acabou de gravar.
