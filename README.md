@@ -15,6 +15,8 @@ Só contas do CardVoz com `IsAdmin`, entrando com **e-mail e senha** ou com **Go
 
 **Google no painel:** gere o build com `NEXT_PUBLIC_GOOGLE_CLIENT_ID` (o mesmo ID do site), cadastre `https://<painel>/entrar/` (e `http://localhost:3001/entrar/` para testar) em "URIs de redirecionamento autorizados" do cliente OAuth no Google Cloud, e confira se a origem do painel está em `CORS_ALLOWED_ORIGINS` da API (a API só aceita voltar para `/entrar/` de origens liberadas). Sem a variável, o botão não aparece.
 
+**Vindo do site:** no Perfil do CardVoz, "Abrir painel Admin" abre `/entrar/#passe=<código>`. O painel troca esse passe (uso único, 1 minuto) por uma sessão própria em `POST /api/auth/admin-pass/redeem` e entra direto, sem pedir login. Passe vencido ou já usado: aparece o login normal com o aviso.
+
 O primeiro admin é definido no Supabase (veja o README do [cardvoz-db](https://github.com/fiuzaheitor/cardvoz-db), seção "Primeiro admin do painel"). Os seguintes, na página **Usuários** do painel. Ninguém tira o próprio acesso nem exclui a própria conta pelo painel.
 
 ## Rodar localmente
@@ -48,7 +50,7 @@ src/
 │   ├── ErroCarregar.tsx      # Erro ao carregar com "Tentar de novo"
 │   ├── Confirmar.tsx         # Confirmação em <dialog> (excluir, admin, sair sem salvar)
 │   ├── page.tsx              # /            Números gerais
-│   ├── entrar/               # /entrar/     Login (e-mail e senha ou Google)
+│   ├── entrar/               # /entrar/     Login (e-mail e senha, Google ou passe vindo do site)
 │   ├── usuarios/             # /usuarios/   Contas, admin e exclusão
 │   └── baralhos/             # /baralhos/   Baralhos compartilhados (+ editar/?id=)
 └── lib/
