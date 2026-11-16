@@ -291,82 +291,83 @@ function EditarContent() {
       <form onSubmit={handleSubmit} noValidate className="pilha">
         <section className="cartao" aria-labelledby="info-titulo">
           <h2 id="info-titulo">Informações</h2>
-          <label className="campo">
-            Título
-            <input
-              id="titulo"
-              value={title}
-              maxLength={200}
-              onChange={(e) => {
-                setTitle(e.target.value);
-                if (problema?.campo === "titulo") setProblema(null);
-              }}
-              {...erroDe("titulo")}
-            />
-            {mensagemDe("titulo")}
-          </label>
-          <label className="campo">
-            <span>
-              Descrição <span className="dica">(opcional)</span>
-            </span>
-            <textarea
-              rows={2}
-              value={description}
-              maxLength={1000}
-              onChange={(e) => setDescription(e.target.value)}
-            />
-          </label>
-          <label className="campo">
-            Idioma das perguntas
-            <select value={questionLanguage} onChange={(e) => setQuestionLanguage(e.target.value)}>
-              {IDIOMAS.map((l) => (
-                <option key={l.value} value={l.value}>
-                  {l.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="campo">
-            Idioma das respostas
-            <select value={answerLanguage} onChange={(e) => setAnswerLanguage(e.target.value)}>
-              {IDIOMAS.map((l) => (
-                <option key={l.value} value={l.value}>
-                  {l.label}
-                </option>
-              ))}
-            </select>
-          </label>
+          <div className="campos">
+            <label className="campo campo-inteiro">
+              Título
+              <input
+                id="titulo"
+                value={title}
+                maxLength={200}
+                onChange={(e) => {
+                  setTitle(e.target.value);
+                  if (problema?.campo === "titulo") setProblema(null);
+                }}
+                {...erroDe("titulo")}
+              />
+              {mensagemDe("titulo")}
+            </label>
+            <label className="campo campo-inteiro">
+              <span>
+                Descrição <span className="dica">(opcional)</span>
+              </span>
+              <textarea
+                rows={2}
+                value={description}
+                maxLength={1000}
+                onChange={(e) => setDescription(e.target.value)}
+              />
+            </label>
+            <label className="campo">
+              Idioma das perguntas
+              <select value={questionLanguage} onChange={(e) => setQuestionLanguage(e.target.value)}>
+                {IDIOMAS.map((l) => (
+                  <option key={l.value} value={l.value}>
+                    {l.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="campo">
+              Idioma das respostas
+              <select value={answerLanguage} onChange={(e) => setAnswerLanguage(e.target.value)}>
+                {IDIOMAS.map((l) => (
+                  <option key={l.value} value={l.value}>
+                    {l.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
         </section>
 
         <section aria-labelledby="fichas-titulo" className="pilha">
           <div className="cabecalho">
-            <h2 id="fichas-titulo">Fichas ({cards.length})</h2>
-            <div className="acoes">
-              <button type="button" className="secundario" onClick={() => colarRef.current?.showModal()}>
-                Colar várias fichas
-              </button>
-              <button type="button" className="secundario" onClick={addCard}>
-                Adicionar ficha
-              </button>
-            </div>
+            <h2 id="fichas-titulo">
+              Fichas<span className="contagem">{cards.length}</span>
+            </h2>
+            <button type="button" className="secundario" onClick={() => colarRef.current?.showModal()}>
+              Colar várias fichas
+            </button>
           </div>
 
-          <ol className="fichas">
+          <ol className="cartao fichas">
+            {/* Só visual: no computador, os nomes das colunas ficam no topo da lista */}
+            <li className="fichas-cabeca" aria-hidden="true">
+              <span>Nº</span>
+              <div>
+                <span>Pergunta</span>
+                <span>Resposta</span>
+              </div>
+            </li>
             {cards.map((card, i) => (
-              <li key={i} className="cartao">
-                <div className="ficha-topo">
-                  <h3 id={`ficha-${i}-titulo`} className="ficha-numero">
-                    Ficha {i + 1}
-                  </h3>
-                  {cards.length > 1 && (
-                    <button type="button" className="texto perigo-texto" onClick={() => removeCard(i)}>
-                      Remover ficha {i + 1}
-                    </button>
-                  )}
-                </div>
+              <li key={i} className="ficha">
+                <h3 id={`ficha-${i}-titulo`} className="ficha-numero">
+                  <span className="rotulo-celular">Ficha </span>
+                  {i + 1}
+                </h3>
                 <div role="group" aria-labelledby={`ficha-${i}-titulo`} className="ficha-campos">
                   <label className="campo">
-                    Pergunta
+                    <span className="rotulo-celular">Pergunta</span>
                     <textarea
                       id={`ficha-${i}-pergunta`}
                       rows={2}
@@ -377,7 +378,7 @@ function EditarContent() {
                     {mensagemDe(`ficha-${i}-pergunta`)}
                   </label>
                   <label className="campo">
-                    Resposta
+                    <span className="rotulo-celular">Resposta</span>
                     <textarea
                       id={`ficha-${i}-resposta`}
                       rows={2}
@@ -388,9 +389,34 @@ function EditarContent() {
                     {mensagemDe(`ficha-${i}-resposta`)}
                   </label>
                 </div>
+                {cards.length > 1 && (
+                  <button
+                    type="button"
+                    className="icone ficha-remover"
+                    aria-label={`Remover ficha ${i + 1}`}
+                    title={`Remover ficha ${i + 1}`}
+                    onClick={() => removeCard(i)}
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                      <path
+                        d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.75"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </button>
+                )}
               </li>
             ))}
           </ol>
+
+          {/* Depois da última ficha: quem preenche em sequência chega nele com um Tab */}
+          <button type="button" className="secundario adicionar" onClick={addCard}>
+            Adicionar ficha
+          </button>
         </section>
 
         <div className="barra-salvar">

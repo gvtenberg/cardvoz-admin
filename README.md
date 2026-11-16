@@ -7,6 +7,8 @@ Painel da equipe do [CardVoz](https://github.com/gvtenberg/cardvoz) para:
 - criar, editar e excluir **baralhos compartilhados**, que aparecem em "Baralhos prontos" no CardVoz. Cada pessoa adiciona uma cópia aos próprios baralhos; mudar ou excluir o compartilhado não altera as cópias já feitas.
   No editor, "Idioma das perguntas" e "Idioma das respostas" (ex.: um baralho de inglês) fazem o leitor de tela de quem copiar pronunciar no idioma certo. "Colar várias fichas" aceita uma lista (uma ficha por linha, `pergunta; resposta`) ou duas colunas copiadas de uma planilha.
 
+O visual é próprio do painel (não segue o do site): denso, para usar no computador, com menu lateral que vira o botão "Menu" no celular e tema escuro conforme o aparelho.
+
 É um site estático em Next.js (pasta `out/`) que chama a [cardvoz-api](https://github.com/fiuzaheitor/cardvoz-api) pelo navegador, nas rotas `/api/admin/*`.
 
 ## Quem pode entrar
@@ -49,6 +51,7 @@ src/
 │   ├── Painel.tsx            # Menu lateral (no celular, botão "Menu") e sessão de admin; sem ela, manda para /entrar/
 │   ├── ErroCarregar.tsx      # Erro ao carregar com "Tentar de novo"
 │   ├── Confirmar.tsx         # Confirmação em <dialog> (excluir, admin, sair sem salvar)
+│   ├── globals.css           # Todo o estilo: variáveis de cor e medida (claro e escuro) no topo
 │   ├── page.tsx              # /            Números gerais
 │   ├── entrar/               # /entrar/     Login (e-mail e senha, Google ou passe vindo do site)
 │   ├── usuarios/             # /usuarios/   Contas, admin e exclusão

@@ -114,13 +114,15 @@ export default function UsuariosPage() {
           <p role="status" className="sr-only">
             Carregando usuários...
           </p>
-          <div className="lista" aria-hidden="true">
-            {Array.from({ length: 3 }, (_, i) => (
-              <div key={i} className="cartao pessoa">
-                <span className="esqueleto avatar" />
-                <div className="pessoa-info">
-                  <span className="esqueleto" style={{ width: "40%", height: "1.5rem" }} />
-                  <span className="esqueleto" style={{ width: "60%", height: "1.25rem" }} />
+          <div className="cartao tabela" aria-hidden="true">
+            {Array.from({ length: 4 }, (_, i) => (
+              <div key={i} className="linha">
+                <div className="linha-quem">
+                  <span className="esqueleto avatar" />
+                  <div className="linha-texto" style={{ flex: 1 }}>
+                    <span className="esqueleto" style={{ width: "40%", height: "1.125rem" }} />
+                    <span className="esqueleto" style={{ width: "60%", height: "1rem" }} />
+                  </div>
                 </div>
               </div>
             ))}
@@ -129,77 +131,91 @@ export default function UsuariosPage() {
       )}
 
       {users && (
-        <>
-          <label className="campo busca">
-            Buscar
+        <div className="cartao tabela tabela-pessoas">
+          <div className="tabela-topo">
             <input
               ref={buscaRef}
               type="search"
-              placeholder="Nome ou e-mail"
+              className="busca"
+              aria-label="Buscar por nome ou e-mail"
+              placeholder="Buscar por nome ou e-mail"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
-          </label>
-          {termo && (
             <p role="status" className="suave">
-              {visiveis.length === 0
-                ? "Nenhuma conta encontrada."
-                : `${plural(visiveis.length, "conta encontrada", "contas encontradas")}.`}
+              {termo
+                ? visiveis.length === 0
+                  ? "Nenhuma conta encontrada."
+                  : `${plural(visiveis.length, "conta encontrada", "contas encontradas")}.`
+                : ""}
             </p>
-          )}
-
-          <ul className="lista">
+          </div>
+          {/* Só visual: cada linha já diz o que é cada dado para o leitor de tela */}
+          <div className="tabela-cabeca" aria-hidden="true">
+            <span>Usuário</span>
+            <span>Entra com</span>
+            <span>Baralhos</span>
+            <span>Criada em</span>
+            <span />
+          </div>
+          <ul className="tabela-linhas">
             {visiveis.map((u) => {
               const sou = u.id === me?.id;
               const ocupado = busyId === u.id || undefined;
               return (
-                <li key={u.id} className="cartao pessoa">
-                  <span className="avatar" aria-hidden="true">
-                    {u.name.trim().charAt(0).toUpperCase() || "?"}
-                  </span>
-                  <div className="pessoa-info">
-                    <h2 className="pessoa-nome">
-                      {u.name}
-                      {sou && " (você)"}
-                    </h2>
-                    <p className="pessoa-email">{u.email}</p>
-                    <p className="selos">
-                      {u.isAdmin && <span className="selo selo-admin">Admin</span>}
-                      <span className="sr-only">Entra com</span>
-                      {u.hasPassword && <span className="selo">Senha</span>}
-                      {u.hasGoogle && <span className="selo">Google</span>}
-                    </p>
-                    <p className="suave">
-                      {plural(u.deckCount, "baralho", "baralhos")} · conta criada em {formatDate(u.createdAt)}
-                    </p>
-                  </div>
-                  {!sou && (
-                    <div className="pessoa-acoes">
-                      <button
-                        type="button"
-                        className="secundario"
-                        aria-disabled={ocupado}
-                        onClick={() => toggleAdmin(u)}
-                        aria-label={`${u.isAdmin ? "Tirar admin" : "Tornar admin"}: ${u.name}`}
-                      >
-                        {u.isAdmin ? "Tirar admin" : "Tornar admin"}
-                      </button>
-                      <button
-                        type="button"
-                        className="perigo"
-                        aria-disabled={ocupado}
-                        onClick={() => remove(u)}
-                        aria-label={`Excluir conta: ${u.name}`}
-                      >
-                        Excluir conta
-                      </button>
+                <li key={u.id} className="linha">
+                  <div className="linha-quem">
+                    <span className="avatar" aria-hidden="true">
+                      {u.name.trim().charAt(0).toUpperCase() || "?"}
+                    </span>
+                    <div className="linha-texto">
+                      <h2 className="linha-nome">
+                        {u.name}
+                        {sou && " (você)"}
+                        {u.isAdmin && <span className="selo selo-admin">Admin</span>}
+                      </h2>
+                      <p className="linha-sub">{u.email}</p>
                     </div>
-                  )}
+                  </div>
+                  <p className="selos">
+                    <span className="sr-only">Entra com</span>
+                    {u.hasPassword && <span className="selo">Senha</span>}
+                    {u.hasGoogle && <span className="selo">Google</span>}
+                  </p>
+                  <p className="linha-dado">{plural(u.deckCount, "baralho", "baralhos")}</p>
+                  <p className="linha-dado">
+                    <span className="rotulo-celular">Conta criada em </span>
+                    {formatDate(u.createdAt)}
+                  </p>
+                  <div className="linha-acoes">
+                    {!sou && (
+                      <>
+                        <button
+                          type="button"
+                          className="secundario"
+                          aria-disabled={ocupado}
+                          onClick={() => toggleAdmin(u)}
+                          aria-label={`${u.isAdmin ? "Tirar admin" : "Tornar admin"}: ${u.name}`}
+                        >
+                          {u.isAdmin ? "Tirar admin" : "Tornar admin"}
+                        </button>
+                        <button
+                          type="button"
+                          className="perigo"
+                          aria-disabled={ocupado}
+                          onClick={() => remove(u)}
+                          aria-label={`Excluir conta: ${u.name}`}
+                        >
+                          Excluir
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </li>
               );
             })}
           </ul>
-        </>
+        </div>
       )}
       {dialogo}
     </main>

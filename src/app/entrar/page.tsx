@@ -100,63 +100,63 @@ export default function EntrarPage() {
 
   return (
     <main id="conteudo" className="estreito">
-      <div className="marca">
-        <Logo tamanho={48} />
-        <span>CardVoz</span>
-        <span className="selo selo-admin">Admin</span>
-      </div>
-      <div className="cabecalho">
-        <div>
-          <h1>Entrar no painel</h1>
-          <p className="suave">
-            Use a sua conta do CardVoz (e-mail e senha{isGoogleConfigured() ? " ou Google" : ""}). Só
-            contas de admin têm acesso.
-          </p>
+      <div className="cartao entrar">
+        <div className="marca">
+          <Logo tamanho={36} />
+          <span>CardVoz</span>
+          <span className="selo selo-admin">Admin</span>
         </div>
-      </div>
-      {error && (
-        <p role="alert" className="erro">
-          {error}
-        </p>
-      )}
-      <form onSubmit={handleSubmit} noValidate className="cartao">
-        <label className="campo">
-          E-mail
-          <input
-            ref={emailRef}
-            type="email"
-            autoComplete="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-        </label>
-        <label className="campo">
-          Senha
-          <input
-            type="password"
-            autoComplete="current-password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-        </label>
-        <button type="submit" aria-disabled={sending || undefined}>
-          {sending ? "Entrando..." : "Entrar"}
-        </button>
-        {isGoogleConfigured() && (
-          <button
-            type="button"
-            className="secundario"
-            aria-disabled={sending || undefined}
-            onClick={() => {
-              if (sending) return;
-              setError("");
-              startGoogleLogin().catch(() => setError("Não foi possível abrir o Google. Tente de novo."));
-            }}
-          >
-            Entrar com Google
-          </button>
+        <div className="entrar-topo">
+          <h1>Entrar no painel</h1>
+          <p className="suave">Use a sua conta do CardVoz. Só contas de admin têm acesso.</p>
+        </div>
+        {error && (
+          <p role="alert" className="erro">
+            {error}
+          </p>
         )}
-      </form>
+        <form onSubmit={handleSubmit} noValidate>
+          <label className="campo">
+            E-mail
+            <input
+              ref={emailRef}
+              type="email"
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </label>
+          <label className="campo">
+            Senha
+            <input
+              type="password"
+              autoComplete="current-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </label>
+          <button type="submit" className="largo" aria-disabled={sending || undefined}>
+            {sending ? "Entrando..." : "Entrar"}
+          </button>
+        </form>
+        {isGoogleConfigured() && (
+          <>
+            <p className="ou">ou</p>
+            <button
+              type="button"
+              className="secundario largo"
+              aria-disabled={sending || undefined}
+              onClick={() => {
+                if (sending) return;
+                setError("");
+                startGoogleLogin().catch(() => setError("Não foi possível abrir o Google. Tente de novo."));
+              }}
+            >
+              Entrar com Google
+            </button>
+          </>
+        )}
+      </div>
     </main>
   );
 }
