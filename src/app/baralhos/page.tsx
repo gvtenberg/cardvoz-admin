@@ -90,12 +90,13 @@ export default function BaralhosPage() {
           <p role="status" className="sr-only">
             Carregando baralhos...
           </p>
-          <div className="grade" aria-hidden="true">
+          <div className="cartao tabela" aria-hidden="true">
             {Array.from({ length: 3 }, (_, i) => (
-              <div key={i} className="cartao baralho">
-                <span className="esqueleto" style={{ width: "70%", height: "1.5rem" }} />
-                <span className="esqueleto" style={{ width: "40%", height: "1.25rem" }} />
-                <span className="esqueleto" style={{ width: "100%", height: "3rem" }} />
+              <div key={i} className="linha">
+                <div className="linha-texto">
+                  <span className="esqueleto" style={{ width: "35%", height: "1.125rem" }} />
+                  <span className="esqueleto" style={{ width: "70%", height: "1rem" }} />
+                </div>
               </div>
             ))}
           </div>
@@ -113,38 +114,48 @@ export default function BaralhosPage() {
       )}
 
       {decks && decks.length > 0 && (
-        <ul className="grade">
-          {decks.map((deck) => (
-            <li key={deck.id} className="cartao baralho">
-              <div className="baralho-texto">
-                <h2>{deck.title}</h2>
-                <p className="suave">
-                  {plural(deck.cardCount, "ficha", "fichas")} · atualizado em{" "}
+        <div className="cartao tabela tabela-baralhos">
+          {/* Só visual: cada linha já diz o que é cada dado para o leitor de tela */}
+          <div className="tabela-cabeca" aria-hidden="true">
+            <span>Baralho</span>
+            <span>Fichas</span>
+            <span>Atualizado em</span>
+            <span />
+          </div>
+          <ul className="tabela-linhas">
+            {decks.map((deck) => (
+              <li key={deck.id} className="linha baralho">
+                <div className="linha-texto">
+                  <h2 className="linha-nome">{deck.title}</h2>
+                  {deck.description && <p className="linha-sub">{deck.description}</p>}
+                </div>
+                <p className="linha-dado">{plural(deck.cardCount, "ficha", "fichas")}</p>
+                <p className="linha-dado">
+                  <span className="rotulo-celular">Atualizado em </span>
                   {formatDate(deck.updatedAt || deck.createdAt)}
                 </p>
-                {deck.description && <p className="baralho-descricao">{deck.description}</p>}
-              </div>
-              <div className="acoes">
-                <Link
-                  href={`/baralhos/editar/?id=${deck.id}`}
-                  className="botao secundario"
-                  aria-label={`Editar: ${deck.title}`}
-                >
-                  Editar
-                </Link>
-                <button
-                  type="button"
-                  className="perigo"
-                  onClick={() => remove(deck)}
-                  aria-disabled={busyId === deck.id || undefined}
-                  aria-label={`Excluir: ${deck.title}`}
-                >
-                  {busyId === deck.id ? "Excluindo..." : "Excluir"}
-                </button>
-              </div>
-            </li>
-          ))}
-        </ul>
+                <div className="linha-acoes">
+                  <Link
+                    href={`/baralhos/editar/?id=${deck.id}`}
+                    className="botao secundario"
+                    aria-label={`Editar: ${deck.title}`}
+                  >
+                    Editar
+                  </Link>
+                  <button
+                    type="button"
+                    className="perigo"
+                    onClick={() => remove(deck)}
+                    aria-disabled={busyId === deck.id || undefined}
+                    aria-label={`Excluir: ${deck.title}`}
+                  >
+                    {busyId === deck.id ? "Excluindo..." : "Excluir"}
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
       {dialogo}
     </main>
